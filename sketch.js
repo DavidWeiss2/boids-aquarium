@@ -9,11 +9,13 @@
 let flocks = [];
 
 flocksUpdate = () => {
+  let debug = true;
   for (let boid of flocks) {
     boid.edges();
     boid.flock(flocks);
     boid.update();
-    boid.show();
+    boid.show(debug);
+    debug = false;
   }
 };
 
@@ -24,11 +26,11 @@ function setup() {
   canvas.position(0, 0);
 
   alignSlider = createSlider(0, 2, 1, 0.1);
-  alignSlider.position(width/4,10);
   cohesionSlider = createSlider(0, 2, 1, 0.1);
-  cohesionSlider.position(width/4*2,10);
   separationSlider = createSlider(0, 2, 1.5, 0.1);
-  separationSlider.position(width/4*3,10);
+  alignSlider.position(width - 150, 10);
+  cohesionSlider.position(width - 150, 30);
+  separationSlider.position(width - 150, 50);
 
   numberOfFlocks = Math.ceil(random(1, 10));
   for (let f = 0; f < numberOfFlocks; f++) {
@@ -45,9 +47,12 @@ function setup() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  alignSlider.position(width - 150, 10);
+  cohesionSlider.position(width - 150, 30);
+  separationSlider.position(width - 150, 50);
 }
 
-document.oncontextmenu = function() {
+document.oncontextmenu = function () {
   return false;
 }
 

@@ -7,15 +7,19 @@
 "use strict";
 
 class Boid {
+  static maxForce = 1 / 5;
+  static maxSpeed = 5;
+  static r = 25;
+  static separationPerceptionRadius = Boid.r;
+  static alignmentPerceptionRadius = Boid.r * 1.5;
+  static cohesionPerceptionRadius = Boid.r * 5;
+
   constructor(colorr) {
     this.position = createVector(random(width), random(height));
     this.velocity = p5.Vector.random2D();
     this.velocity.setMag(random(2, 4));
     this.acceleration = createVector();
     this.myColor = colorr;
-    this.maxForce = 0.1;
-    this.maxSpeed = 5;
-    this.health = 1;
   }
 
   edges() {
@@ -32,32 +36,31 @@ class Boid {
   }
 
   align(boids) {
-    let perceptionRadius = 50;
     let steering = createVector();
     let total = 0;
     for (let other of boids) {
+      if (other.myColor != this.myColor) continue;
       let d = dist(
         this.position.x,
         this.position.y,
         other.position.x,
         other.position.y
       );
-      if (other != this && other.myColor == this.myColor && d < perceptionRadius) {
+      if (other != this && d < Boid.alignmentPerceptionRadius) {
         steering.add(other.velocity);
         total++;
       }
     }
     if (total > 0) {
       steering.div(total);
-      steering.setMag(this.maxSpeed);
+      steering.setMag(Boid.maxSpeed);
       steering.sub(this.velocity);
-      steering.limit(this.maxForce);
+      steering.limit(Boid.maxForce);
     }
     return steering;
   }
 
   separation(boids) {
-    let perceptionRadius = 50;
     let steering = createVector();
     let total = 0;
     for (let other of boids) {
@@ -67,7 +70,7 @@ class Boid {
         other.position.x,
         other.position.y
       );
-      if (other != this && d < perceptionRadius) {
+      if (other != this && d < Boid.separationPerceptionRadius) {
         let diff = p5.Vector.sub(this.position, other.position);
         diff.div(d * d);
         steering.add(diff);
@@ -76,25 +79,26 @@ class Boid {
     }
     if (total > 0) {
       steering.div(total);
-      steering.setMag(this.maxSpeed);
+      steering.setMag(Boid.maxSpeed);
       steering.sub(this.velocity);
-      steering.limit(this.maxForce);
+      steering.limit(Boid.maxForce);
     }
     return steering;
   }
 
   cohesion(boids) {
-    let perceptionRadius = 100;
     let steering = createVector();
     let total = 0;
     for (let other of boids) {
+      if (other.myColor != this.myColor) continue;
+
       let d = dist(
         this.position.x,
         this.position.y,
         other.position.x,
         other.position.y
       );
-      if (other != this && other.myColor == this.myColor && d < perceptionRadius) {
+      if (other != this && d < Boid.cohesionPerceptionRadius) {
         steering.add(other.position);
         total++;
       }
@@ -102,9 +106,9 @@ class Boid {
     if (total > 0) {
       steering.div(total);
       steering.sub(this.position);
-      steering.setMag(this.maxSpeed);
+      steering.setMag(Boid.maxSpeed);
       steering.sub(this.velocity);
-      steering.limit(this.maxForce);
+      steering.limit(Boid.maxForce);
     }
     return steering;
   }
@@ -126,16 +130,22 @@ class Boid {
   update() {
     this.position.add(this.velocity);
     this.velocity.add(this.acceleration);
-    this.velocity.limit(this.maxSpeed);
+    this.velocity.limit(Boid.maxSpeed);
     this.acceleration.mult(0);
   }
 
-  show() {
+  show(debug = false) {
     let theta = this.velocity.heading() + radians(180);
     push();
     noStroke();
     fill(this.myColor);
-    arc(this.position.x, this.position.y, 25, 25, theta, theta+QUARTER_PI);
+    arc(this.position.x, this.position.y, Boid.r, Boid.r, theta, theta + QUARTER_PI);
+    if (debug) {
+      fill(255, 255, 255, 15);
+      arc(this.position.x, this.position.y, Boid.separationPerceptionRadius, Boid.separationPerceptionRadius, 0, TWO_PI);
+      arc(this.position.x, this.position.y, Boid.alignmentPerceptionRadius, Boid.alignmentPerceptionRadius, 0, TWO_PI);
+      arc(this.position.x, this.position.y, Boid.cohesionPerceptionRadius, Boid.cohesionPerceptionRadius, 0, TWO_PI);
+    }
     pop();
   }
 }
