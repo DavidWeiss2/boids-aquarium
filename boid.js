@@ -10,9 +10,9 @@ class Boid {
   static maxForce = 1 / 5;
   static maxSpeed = 5;
   static r = 25;
-  static separationPerceptionRadius = Boid.r;
-  static alignmentPerceptionRadius = Boid.r * 1.5;
-  static cohesionPerceptionRadius = Boid.r * 5;
+  static separationPerceptionRadius = () => Boid.r * separationPerceptionSlider.value();
+  static alignmentPerceptionRadius = () => Boid.r * alignmentPerceptionSlider.value();
+  static cohesionPerceptionRadius = () => Boid.r * cohesionPerceptionSlider.value();
 
   constructor(colorr) {
     this.position = createVector(random(width), random(height));
@@ -46,7 +46,7 @@ class Boid {
         other.position.x,
         other.position.y
       );
-      if (other != this && d < Boid.alignmentPerceptionRadius) {
+      if (other != this && d < Boid.alignmentPerceptionRadius()) {
         steering.add(other.velocity);
         total++;
       }
@@ -70,7 +70,7 @@ class Boid {
         other.position.x,
         other.position.y
       );
-      if (other != this && d < Boid.separationPerceptionRadius) {
+      if (other != this && d < Boid.separationPerceptionRadius()) {
         let diff = p5.Vector.sub(this.position, other.position);
         diff.div(d * d);
         steering.add(diff);
@@ -98,7 +98,7 @@ class Boid {
         other.position.x,
         other.position.y
       );
-      if (other != this && d < Boid.cohesionPerceptionRadius) {
+      if (other != this && d < Boid.cohesionPerceptionRadius()) {
         steering.add(other.position);
         total++;
       }
@@ -141,10 +141,14 @@ class Boid {
     fill(this.myColor);
     arc(this.position.x, this.position.y, Boid.r, Boid.r, theta, theta + QUARTER_PI);
     if (debug) {
-      fill(255, 255, 255, 15);
-      arc(this.position.x, this.position.y, Boid.separationPerceptionRadius, Boid.separationPerceptionRadius, 0, TWO_PI);
-      arc(this.position.x, this.position.y, Boid.alignmentPerceptionRadius, Boid.alignmentPerceptionRadius, 0, TWO_PI);
-      arc(this.position.x, this.position.y, Boid.cohesionPerceptionRadius, Boid.cohesionPerceptionRadius, 0, TWO_PI);
+      noFill();
+      strokeWeight(2);
+      stroke(255, 0, 0, separationSlider.value() * 100 + 30);
+      ellipse(this.position.x, this.position.y, Boid.separationPerceptionRadius());
+      stroke(0, 255, 0, alignSlider.value() * 100 + 30);
+      ellipse(this.position.x, this.position.y, Boid.alignmentPerceptionRadius());
+      stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
+      ellipse(this.position.x, this.position.y, Boid.cohesionPerceptionRadius());
     }
     pop();
   }

@@ -20,6 +20,7 @@ flocksUpdate = () => {
 };
 
 let alignSlider, cohesionSlider, separationSlider;
+let separationPerceptionRadius, alignmentPerceptionRadius, cohesionPerceptionRadius;
 
 function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
@@ -28,9 +29,15 @@ function setup() {
   alignSlider = createSlider(0, 2, 1, 0.1);
   cohesionSlider = createSlider(0, 2, 1, 0.1);
   separationSlider = createSlider(0, 2, 1.5, 0.1);
+  alignmentPerceptionSlider = createSlider(0.5, 10, 1.5, 0.5);
+  cohesionPerceptionSlider = createSlider(0.5, 10, 5, 0.5);
+  separationPerceptionSlider = createSlider(0.5, 10, 1, 0.5);
   alignSlider.position(width - 150, 10);
   cohesionSlider.position(width - 150, 30);
   separationSlider.position(width - 150, 50);
+  alignmentPerceptionSlider.position(width - 150, 70);
+  cohesionPerceptionSlider.position(width - 150, 90);
+  separationPerceptionSlider.position(width - 150, 110);
 
   numberOfFlocks = Math.ceil(random(1, 10));
   for (let f = 0; f < numberOfFlocks; f++) {
@@ -50,6 +57,9 @@ function windowResized() {
   alignSlider.position(width - 150, 10);
   cohesionSlider.position(width - 150, 30);
   separationSlider.position(width - 150, 50);
+  alignmentPerceptionSlider.position(width - 150, 70);
+  cohesionPerceptionSlider.position(width - 150, 90);
+  separationPerceptionSlider.position(width - 150, 110);
 }
 
 document.oncontextmenu = function () {
