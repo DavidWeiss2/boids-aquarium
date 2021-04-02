@@ -7,8 +7,8 @@
 "use strict";
 
 class Boid {
-  static maxForce = 1 / 5;
-  static maxSpeed = 5;
+  static maxForce = 1 / 30;
+  static maxSpeed = 2.5;
   static r = 25;
   static separationPerceptionRadius = () => Boid.r * separationPerceptionSlider.value();
   static alignmentPerceptionRadius = () => Boid.r * alignmentPerceptionSlider.value();
