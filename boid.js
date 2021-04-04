@@ -8,11 +8,12 @@
 
 class Boid {
   static maxForce = 1 / 30;
-  static maxSpeed = 2.5;
-  static r = 25;
-  static separationPerceptionRadius = () => Boid.r * separationPerceptionSlider.value();
-  static alignmentPerceptionRadius = () => Boid.r * alignmentPerceptionSlider.value();
-  static cohesionPerceptionRadius = () => Boid.r * cohesionPerceptionSlider.value();
+  static maxSpeed = 1;
+  static r = () => 25;
+  static separationPerceptionRadius = () => Boid.r() * separationPerceptionSlider.value();
+  static alignmentPerceptionRadius = () => Boid.r() * alignmentPerceptionSlider.value();
+  static cohesionPerceptionRadius = () => Boid.r() * cohesionPerceptionSlider.value();
+  static EIGHTH_PI = Math.PI / 8;
 
   constructor(colorr) {
     this.position = createVector(random(width), random(height));
@@ -23,14 +24,14 @@ class Boid {
   }
 
   edges() {
-    if (this.position.x > width) {
+    if (this.position.x - Boid.r() > width) {
       this.position.x = 0;
-    } else if (this.position.x < 0) {
+    } else if (this.position.x < 0 - Boid.r()) {
       this.position.x = width;
     }
-    if (this.position.y > height) {
+    if (this.position.y - Boid.r() > height) {
       this.position.y = 0;
-    } else if (this.position.y < 0) {
+    } else if (this.position.y < 0 - Boid.r()) {
       this.position.y = height;
     }
   }
@@ -47,8 +48,13 @@ class Boid {
         other.position.y
       );
       if (other != this && d < Boid.alignmentPerceptionRadius()) {
-        steering.add(other.velocity);
-        total++;
+        let dx = other.position.x - this.position.x;
+        let dy = other.position.y - this.position.y;
+        let vec = createVector(dx, dy);
+        if (Math.abs(this.velocity.angleBetween(vec)) < PerceptionDagreesSlider.value()) {
+          steering.add(other.velocity);
+          total++;
+        }
       }
     }
     if (total > 0) {
@@ -71,10 +77,15 @@ class Boid {
         other.position.y
       );
       if (other != this && d < Boid.separationPerceptionRadius()) {
-        let diff = p5.Vector.sub(this.position, other.position);
-        diff.div(d * d);
-        steering.add(diff);
-        total++;
+        let dx = other.position.x - this.position.x;
+        let dy = other.position.y - this.position.y;
+        let vec = createVector(dx, dy);
+        if (Math.abs(this.velocity.angleBetween(vec)) < PerceptionDagreesSlider.value()) {
+          let diff = p5.Vector.sub(this.position, other.position);
+          diff.div(d * d);
+          steering.add(diff);
+          total++;
+        }
       }
     }
     if (total > 0) {
@@ -98,9 +109,15 @@ class Boid {
         other.position.x,
         other.position.y
       );
+
       if (other != this && d < Boid.cohesionPerceptionRadius()) {
-        steering.add(other.position);
-        total++;
+        let dx = other.position.x - this.position.x;
+        let dy = other.position.y - this.position.y;
+        let vec = createVector(dx, dy);
+        if (Math.abs(this.velocity.angleBetween(vec)) < PerceptionDagreesSlider.value()) {
+          steering.add(other.position);
+          total++;
+        }
       }
     }
     if (total > 0) {
@@ -134,21 +151,57 @@ class Boid {
     this.acceleration.mult(0);
   }
 
-  show(debug = false) {
-    let theta = this.velocity.heading() + radians(180);
+  show(debug = false, boids = []) {
+    let theta = this.velocity.heading() + PI;
     push();
+    translate(this.position.x, this.position.y);
+    rotate(theta);
     noStroke();
     fill(this.myColor);
-    arc(this.position.x, this.position.y, Boid.r, Boid.r, theta, theta + QUARTER_PI);
+    arc(0, 0, Boid.r(), Boid.r(), - Boid.EIGHTH_PI, Boid.EIGHTH_PI);
     if (debug) {
+      let maxParception = Math.max(Boid.separationPerceptionRadius()*2, Boid.alignmentPerceptionRadius()*2, Boid.cohesionPerceptionRadius()*2);
       noFill();
       strokeWeight(2);
       stroke(255, 0, 0, separationSlider.value() * 100 + 30);
-      ellipse(this.position.x, this.position.y, Boid.separationPerceptionRadius());
+      ellipse(0, 0, Boid.separationPerceptionRadius() * 2);
       stroke(0, 255, 0, alignSlider.value() * 100 + 30);
-      ellipse(this.position.x, this.position.y, Boid.alignmentPerceptionRadius());
+      ellipse(0, 0, Boid.alignmentPerceptionRadius() * 2);
       stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
-      ellipse(this.position.x, this.position.y, Boid.cohesionPerceptionRadius());
+      ellipse(0, 0, Boid.cohesionPerceptionRadius() * 2);
+      stroke(255, 255, 255, PerceptionDagreesSlider.value() + 70);
+      fill(255, 255, 255, PerceptionDagreesSlider.value() + 70);
+      rotate(PI);
+      arc(0, 0, maxParception, maxParception, -PerceptionDagreesSlider.value(), PerceptionDagreesSlider.value());
+      pop();
+      push();
+      for (let other of boids) {
+
+        let d = dist(
+          this.position.x,
+          this.position.y,
+          other.position.x,
+          other.position.y
+        );
+        if (other != this && d < Boid.cohesionPerceptionRadius()) {
+          let dx = other.position.x - this.position.x;
+          let dy = other.position.y - this.position.y;
+          let vec = createVector(dx, dy);
+          let angleFromPos = atan2(dy, dx);
+          if (Math.abs(this.velocity.angleBetween(vec)) < PerceptionDagreesSlider.value()) {
+
+            let x = other.position.x - cos(angleFromPos) * d;
+            let y = other.position.y - sin(angleFromPos) * d;
+            push();
+            translate(x, y);
+            rotate(angleFromPos);
+            stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
+            line(0, 0, d, 0);
+            pop();
+          }
+        }
+      }
+      push();
     }
     pop();
   }
