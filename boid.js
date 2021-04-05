@@ -25,8 +25,8 @@ class Boid {
   }
 
   edges() {
-    const margin = 50;
-    const turnFactor = Boid.maxForce * 2;
+    const margin = 150;
+    const turnFactor = Boid.maxForce / 2;
 
     if (this.position.x > width - margin) {
       this.acceleration.add(-turnFactor, 0);
@@ -60,13 +60,9 @@ class Boid {
           steering.add(other.velocity);
           total++;
           if (allDebugCheckBox.checked()){
-            let angleFromPos = atan2(dy, dx);let x = other.position.x - cos(angleFromPos) * d;
-            let y = other.position.y - sin(angleFromPos) * d;
             push();
-            translate(x, y);
-            rotate(angleFromPos);
             stroke(0, 255, 0, alignSlider.value() * 100 + 30);
-            line(0, 0, d, 0);
+            line(this.position.x, this.position.y, other.position.x, other.position.y);
             pop();
           }
           this.flagsRGBforACS[0] = 1;
@@ -103,13 +99,9 @@ class Boid {
           steering.add(diff);
           total++;
           if (allDebugCheckBox.checked()){
-            let angleFromPos = atan2(dy, dx);let x = other.position.x - cos(angleFromPos) * d;
-            let y = other.position.y - sin(angleFromPos) * d;
             push();
-            translate(x, y);
-            rotate(angleFromPos);
             stroke(255, 0, 0, separationSlider.value() * 100 + 30);
-            line(0, 0, d, 0);
+            line(this.position.x, this.position.y, other.position.x, other.position.y);
             pop();
           }
           this.flagsRGBforACS[2] = 1;
@@ -147,13 +139,9 @@ class Boid {
           steering.add(other.position);
           total++;
           if (allDebugCheckBox.checked()){
-            let angleFromPos = atan2(dy, dx);let x = other.position.x - cos(angleFromPos) * d;
-            let y = other.position.y - sin(angleFromPos) * d;
             push();
-            translate(x, y);
-            rotate(angleFromPos);
             stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
-            line(0, 0, d, 0);
+            line(this.position.x, this.position.y, other.position.x, other.position.y);
             pop();
           }
           this.flagsRGBforACS[1] = 1;
@@ -201,7 +189,7 @@ class Boid {
     fill(this.myColor);
     arc(0, 0, Boid.r(), Boid.r(), - Boid.EIGHTH_PI, Boid.EIGHTH_PI);
     if (debug) {
-      noFill();
+      fill(255,255,255,30);
       rotate(PI);
       stroke(255, 0, 0, separationSlider.value() * 100 + 30);
       arc(0, 0, Boid.separationPerceptionRadius() * 2, Boid.separationPerceptionRadius() * 2, -PerceptionDagreesSlider.value(), PerceptionDagreesSlider.value());
