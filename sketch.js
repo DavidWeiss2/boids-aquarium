@@ -11,10 +11,10 @@
 let flocks = [];
 
 let area;
-let divider;
+let divider = Boid.r() * 500;
 let maxNumberOfBoids;
 let minNumberOfBoids;
-let numberOfBoids;
+let numberOfBoids = -1;
 let minFlockSize = 3;
 
 let flocksUpdate = () => {
@@ -49,12 +49,6 @@ function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.position(0, 0);
 
-  area = width * height;
-  divider = Boid.r() * 1000;
-  maxNumberOfBoids = area / divider;
-  minNumberOfBoids = 9;
-  numberOfBoids = Math.max(Math.ceil(random(maxNumberOfBoids)), 9);
-
   alignSlider = createSlider(0, 2, 1, 0.1);
   cohesionSlider = createSlider(0, 2, 0.8, 0.1);
   separationSlider = createSlider(0, 2, 1.5, 0.1);
@@ -69,35 +63,71 @@ function setup() {
   );
   allDebugCheckBox = createCheckbox("All debug", false);
   freezeCheckBox = createCheckbox("freeze", false);
-  numberOfBoidsSlider = createSlider(
-    minNumberOfBoids,
-    maxNumberOfBoids,
-    numberOfBoids,
-    1
-  );
+  numberOfBoidsSlider = createSlider(0, 10, 5, 1);
+  setNumberOfBoids();
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-
-  area = width * height;
-  divider = Boid.r() * 1000;
-  maxNumberOfBoids = area / divider;
-  minNumberOfBoids = 9;
-  numberOfBoids = Math.min(numberOfBoids, maxNumberOfBoids);
-  numberOfBoids = Math.max(numberOfBoids, minNumberOfBoids);
-  numberOfBoidsSlider.elt.min = minNumberOfBoids;
-  numberOfBoidsSlider.elt.max = maxNumberOfBoids;
-  numberOfBoidsSlider.value(numberOfBoids);
+  setNumberOfBoids();
 }
 
 document.oncontextmenu = function () {
   return false;
 };
 
+function setNumberOfBoids() {
+  area = width * height;
+  maxNumberOfBoids = (area / divider) * 2;
+  minNumberOfBoids = maxNumberOfBoids / 5;
+  if (numberOfBoids === -1) {
+    numberOfBoids = random(minNumberOfBoids, maxNumberOfBoids);
+  } else {
+    numberOfBoids = Math.min(numberOfBoids, maxNumberOfBoids);
+    numberOfBoids = Math.max(numberOfBoids, minNumberOfBoids);
+  }
+  numberOfBoidsSlider.elt.min = minNumberOfBoids;
+  numberOfBoidsSlider.elt.max = maxNumberOfBoids;
+  numberOfBoidsSlider.value(numberOfBoids);
+}
+
 function draw() {
   background(51);
+  displayControls();
 
+  var boid = new Boid();
+  const countSameColor = (accumulator, currentValue) =>
+    currentValue.myColor === boid.myColor ? ++accumulator : accumulator;
+
+  //remove lonely boids
+  for (let index = flocks.length - 1; index > -1; index--) {
+    boid = flocks[index];
+    let flockSize = flocks.reduce(countSameColor, 1);
+    if (flockSize <= minFlockSize) {
+      flocks.splice(index, 1);
+    }
+  }
+
+  //remove boid
+  if (numberOfBoidsSlider.value() * 1.3 < flocks.length) {
+    let randomIndex = Math.floor(random(flocks.length));
+    flocks.splice(randomIndex, 1);
+  }
+
+  //add boid
+  while (numberOfBoidsSlider.value() > flocks.length) {
+    let flock = [];
+    let colorr = color(random(256), random(256), random(256));
+    let numberOfBoidsInTheFlock = random(minFlockSize, numberOfBoids / 3);
+    for (let i = 0; i < numberOfBoidsInTheFlock; i++) {
+      flock.push(new Boid(colorr));
+    }
+    flocks = flocks.concat(flock);
+  }
+
+  flocksUpdate();
+}
+function displayControls() {
   let yIndex = 10;
   let xIndex = width - 150;
   textSize(12);
@@ -131,34 +161,4 @@ function draw() {
   allDebugCheckBox.position(xIndex, yIndex);
   yIndex += 20;
   freezeCheckBox.position(xIndex, yIndex);
-
-  //remove boid
-  if (numberOfBoidsSlider.value() * 1.3 < flocks.length) {
-    let randomIndex = Math.floor(random(flocks.length));
-    flocks.splice(randomIndex, 1);
-  }
-  var boid = new Boid();
-  const countSameColor = (accumulator, currentValue) =>
-    currentValue.myColor === boid.myColor ? ++accumulator : accumulator;
-  //remove lonely boids
-  for (let index = flocks.length - 1; index > -1; index--) {
-    boid = flocks[index];
-    let flockSize = flocks.reduce(countSameColor, 1);
-    if (flockSize <= minFlockSize) {
-      flocks.splice(index, 1);
-    }
-  }
-
-  //add boid
-  while (numberOfBoidsSlider.value() > flocks.length) {
-    let flock = [];
-    let colorr = color(random(256), random(256), random(256));
-    let numberOfBoidsInTheFlock = random(minFlockSize, numberOfBoids / 3);
-    for (let i = 0; i < numberOfBoidsInTheFlock; i++) {
-      flock.push(new Boid(colorr));
-    }
-    flocks = flocks.concat(flock);
-  }
-
-  flocksUpdate();
 }
