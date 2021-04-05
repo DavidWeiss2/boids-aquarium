@@ -7,8 +7,8 @@
 "use strict";
 
 class Boid {
-  static maxForce = 1 / 30;
-  static maxSpeed = 1;
+  static maxForce = 1 / 25;
+  static maxSpeed = 2.5;
   static r = () => 25;
   static separationPerceptionRadius = () => Boid.r() * separationPerceptionSlider.value();
   static alignmentPerceptionRadius = () => Boid.r() * alignmentPerceptionSlider.value();
@@ -21,24 +21,29 @@ class Boid {
     this.velocity.setMag(random(2, 4));
     this.acceleration = createVector();
     this.myColor = colorr;
+    this.flagsRGBforACS = [0, 0, 0];
   }
 
   edges() {
-    if (this.position.x - Boid.r() > width) {
-      this.position.x = 0;
-    } else if (this.position.x < 0 - Boid.r()) {
-      this.position.x = width;
+    const margin = 50;
+    const turnFactor = Boid.maxForce * 2;
+
+    if (this.position.x > width - margin) {
+      this.acceleration.add(-turnFactor, 0);
+    } else if (this.position.x < margin) {
+      this.acceleration.add(turnFactor, 0);
     }
-    if (this.position.y - Boid.r() > height) {
-      this.position.y = 0;
-    } else if (this.position.y < 0 - Boid.r()) {
-      this.position.y = height;
+    if (this.position.y > height - margin) {
+      this.acceleration.add(0, -turnFactor);
+    } else if (this.position.y < margin) {
+      this.acceleration.add(0, turnFactor);
     }
   }
 
   align(boids) {
     let steering = createVector();
     let total = 0;
+    this.flagsRGBforACS[0] = 0;
     for (let other of boids) {
       if (other.myColor != this.myColor) continue;
       let d = dist(
@@ -54,6 +59,17 @@ class Boid {
         if (Math.abs(this.velocity.angleBetween(vec)) < PerceptionDagreesSlider.value()) {
           steering.add(other.velocity);
           total++;
+          if (allDebugCheckBox.checked()){
+            let angleFromPos = atan2(dy, dx);let x = other.position.x - cos(angleFromPos) * d;
+            let y = other.position.y - sin(angleFromPos) * d;
+            push();
+            translate(x, y);
+            rotate(angleFromPos);
+            stroke(0, 255, 0, alignSlider.value() * 100 + 30);
+            line(0, 0, d, 0);
+            pop();
+          }
+          this.flagsRGBforACS[0] = 1;
         }
       }
     }
@@ -69,6 +85,7 @@ class Boid {
   separation(boids) {
     let steering = createVector();
     let total = 0;
+    this.flagsRGBforACS[2] = 0;
     for (let other of boids) {
       let d = dist(
         this.position.x,
@@ -85,6 +102,17 @@ class Boid {
           diff.div(d * d);
           steering.add(diff);
           total++;
+          if (allDebugCheckBox.checked()){
+            let angleFromPos = atan2(dy, dx);let x = other.position.x - cos(angleFromPos) * d;
+            let y = other.position.y - sin(angleFromPos) * d;
+            push();
+            translate(x, y);
+            rotate(angleFromPos);
+            stroke(255, 0, 0, separationSlider.value() * 100 + 30);
+            line(0, 0, d, 0);
+            pop();
+          }
+          this.flagsRGBforACS[2] = 1;
         }
       }
     }
@@ -100,6 +128,7 @@ class Boid {
   cohesion(boids) {
     let steering = createVector();
     let total = 0;
+    this.flagsRGBforACS[1] = 0;
     for (let other of boids) {
       if (other.myColor != this.myColor) continue;
 
@@ -117,6 +146,17 @@ class Boid {
         if (Math.abs(this.velocity.angleBetween(vec)) < PerceptionDagreesSlider.value()) {
           steering.add(other.position);
           total++;
+          if (allDebugCheckBox.checked()){
+            let angleFromPos = atan2(dy, dx);let x = other.position.x - cos(angleFromPos) * d;
+            let y = other.position.y - sin(angleFromPos) * d;
+            push();
+            translate(x, y);
+            rotate(angleFromPos);
+            stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
+            line(0, 0, d, 0);
+            pop();
+          }
+          this.flagsRGBforACS[1] = 1;
         }
       }
     }
@@ -148,7 +188,7 @@ class Boid {
     this.position.add(this.velocity);
     this.velocity.add(this.acceleration);
     this.velocity.limit(Boid.maxSpeed);
-    this.acceleration.mult(0);
+    this.acceleration.setMag(0.01);
   }
 
   show(debug = false, boids = []) {
@@ -156,52 +196,19 @@ class Boid {
     push();
     translate(this.position.x, this.position.y);
     rotate(theta);
-    noStroke();
+    strokeWeight(2);
+    stroke(this.flagsRGBforACS[2] * 255, this.flagsRGBforACS[0] * 255, this.flagsRGBforACS[1] * 255);
     fill(this.myColor);
     arc(0, 0, Boid.r(), Boid.r(), - Boid.EIGHTH_PI, Boid.EIGHTH_PI);
     if (debug) {
-      let maxParception = Math.max(Boid.separationPerceptionRadius()*2, Boid.alignmentPerceptionRadius()*2, Boid.cohesionPerceptionRadius()*2);
       noFill();
-      strokeWeight(2);
-      stroke(255, 0, 0, separationSlider.value() * 100 + 30);
-      ellipse(0, 0, Boid.separationPerceptionRadius() * 2);
-      stroke(0, 255, 0, alignSlider.value() * 100 + 30);
-      ellipse(0, 0, Boid.alignmentPerceptionRadius() * 2);
-      stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
-      ellipse(0, 0, Boid.cohesionPerceptionRadius() * 2);
-      stroke(255, 255, 255, PerceptionDagreesSlider.value() + 70);
-      fill(255, 255, 255, PerceptionDagreesSlider.value() + 70);
       rotate(PI);
-      arc(0, 0, maxParception, maxParception, -PerceptionDagreesSlider.value(), PerceptionDagreesSlider.value());
-      pop();
-      push();
-      for (let other of boids) {
-
-        let d = dist(
-          this.position.x,
-          this.position.y,
-          other.position.x,
-          other.position.y
-        );
-        if (other != this && d < Boid.cohesionPerceptionRadius()) {
-          let dx = other.position.x - this.position.x;
-          let dy = other.position.y - this.position.y;
-          let vec = createVector(dx, dy);
-          let angleFromPos = atan2(dy, dx);
-          if (Math.abs(this.velocity.angleBetween(vec)) < PerceptionDagreesSlider.value()) {
-
-            let x = other.position.x - cos(angleFromPos) * d;
-            let y = other.position.y - sin(angleFromPos) * d;
-            push();
-            translate(x, y);
-            rotate(angleFromPos);
-            stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
-            line(0, 0, d, 0);
-            pop();
-          }
-        }
-      }
-      push();
+      stroke(255, 0, 0, separationSlider.value() * 100 + 30);
+      arc(0, 0, Boid.separationPerceptionRadius() * 2, Boid.separationPerceptionRadius() * 2, -PerceptionDagreesSlider.value(), PerceptionDagreesSlider.value());
+      stroke(0, 255, 0, alignSlider.value() * 100 + 30);
+      arc(0, 0, Boid.alignmentPerceptionRadius() * 2, Boid.alignmentPerceptionRadius() * 2, -PerceptionDagreesSlider.value(), PerceptionDagreesSlider.value());
+      stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
+      arc(0, 0, Boid.cohesionPerceptionRadius() * 2, Boid.cohesionPerceptionRadius() * 2, -PerceptionDagreesSlider.value(), PerceptionDagreesSlider.value());
     }
     pop();
   }

@@ -10,31 +10,47 @@
 
 let flocks = [];
 
+let area;
+let divider;
+let maxNumberOfBoids;
+let minNumberOfBoids;
+let numberOfBoids;
+let minFlockSize = 3;
+
 let flocksUpdate = () => {
-  let debug = true;
+  let debug = allDebugCheckBox.checked();
   for (let boid of flocks) {
     boid.edges();
     boid.flock(flocks);
     boid.update();
     boid.show(debug, flocks);
-    debug = false;
   }
 };
 
 let alignSlider, cohesionSlider, separationSlider, PerceptionDagreesSlider;
 let separationPerceptionSlider, alignmentPerceptionSlider, cohesionPerceptionSlider;
+let allDebugCheckBox;
+let numberOfBoidsSlider;
 
 function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.position(0, 0);
 
+  area = width * height;
+  divider = Boid.r() * 1000;
+  maxNumberOfBoids = area / divider;
+  minNumberOfBoids = 9;
+  numberOfBoids = Math.max(Math.ceil(random(maxNumberOfBoids)), 9);
+
   alignSlider = createSlider(0, 2, 1, 0.1);
   cohesionSlider = createSlider(0, 2, 0.8, 0.1);
-  separationSlider = createSlider(0, 2, 1.1, 0.1);
-  alignmentPerceptionSlider = createSlider(0.5, 10, 4, 0.5);
+  separationSlider = createSlider(0, 2, 1.5, 0.1);
+  alignmentPerceptionSlider = createSlider(0.5, 10, 5, 0.5);
   cohesionPerceptionSlider = createSlider(0.5, 10, 5, 0.5);
-  separationPerceptionSlider = createSlider(0.5, 10, 1, 0.5);
-  PerceptionDagreesSlider = createSlider(PI / 180, PI+PI / 180, 1.93731546971371, PI / 180);
+  separationPerceptionSlider = createSlider(0.5, 10, 2, 0.5);
+  PerceptionDagreesSlider = createSlider(PI / 180, PI + PI / 180, PI - PI / 3, PI / 180);
+  allDebugCheckBox = createCheckbox('All debug', false);
+  numberOfBoidsSlider = createSlider(minNumberOfBoids, maxNumberOfBoids, numberOfBoids, 1);
   let yIndex = 10;
   let xIndex = width - 150;
   alignSlider.position(xIndex, yIndex);
@@ -50,25 +66,25 @@ function setup() {
   separationPerceptionSlider.position(xIndex, yIndex);
   yIndex += 20;
   PerceptionDagreesSlider.position(xIndex, yIndex);
-
-  let area = width * height;
-  let divider = Boid.r() * 1000;
-  let maxNumberOfBoids = area / divider;
-  let numberOfBoids = Math.max(Math.ceil(random(maxNumberOfBoids)), 9);
-  while (numberOfBoids >= flocks.length) {
-    let flock = [];
-    let colorr = color(random(256), random(256), random(256));
-    let numberOfBoidsInTheFlock = random(2, numberOfBoids / 3);
-    for (let i = 0; i < numberOfBoidsInTheFlock; i++) {
-      flock.push(new Boid(colorr));
-    }
-    flocks = flocks.concat(flock);
-  }
-  return;
+  yIndex += 20;
+  allDebugCheckBox.position(xIndex, yIndex);
+  yIndex += 20;
+  numberOfBoidsSlider.position(xIndex, yIndex);
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+
+  area = width * height;
+  divider = Boid.r() * 1000;
+  maxNumberOfBoids = area / divider;
+  minNumberOfBoids = 9;
+  numberOfBoids = Math.min(numberOfBoids, maxNumberOfBoids);
+  numberOfBoids = Math.max(numberOfBoids, minNumberOfBoids);
+  numberOfBoidsSlider.min=minNumberOfBoids;
+  numberOfBoidsSlider.max=maxNumberOfBoids;
+  numberOfBoidsSlider.value(numberOfBoids);
+
   let yIndex = 10;
   let xIndex = width - 150;
   alignSlider.position(xIndex, yIndex);
@@ -84,35 +100,10 @@ function windowResized() {
   separationPerceptionSlider.position(xIndex, yIndex);
   yIndex += 20;
   PerceptionDagreesSlider.position(xIndex, yIndex);
-
-  let area = width * height;
-  let divider = Boid.r() * 1000;
-  let maxNumberOfBoids = area / divider;
-  let numberOfBoids = Math.max(Math.ceil(random(maxNumberOfBoids)), 9);
-
-  
-
-  //remove boids
-  while (numberOfBoids*1.3 < flocks.length) {
-    let randomIndex = Math.floor(random(flocks.length));
-    let randomBoidColor = flocks[randomIndex].myColor;
-    for (let i = flocks.length-1; i >= 0; i--) {
-      if (flocks[i].myColor === randomBoidColor){
-        flocks.splice(i,1);
-      }
-    }
-  }
-
-  //add boids
-  while (numberOfBoids >= flocks.length) {
-    let flock = [];
-    let colorr = color(random(256), random(256), random(256));
-    let numberOfBoidsInTheFlock = random(2, numberOfBoids / 3);
-    for (let i = 0; i < numberOfBoidsInTheFlock; i++) {
-      flock.push(new Boid(colorr));
-    }
-    flocks = flocks.concat(flock);
-  }
+  yIndex += 20;
+  allDebugCheckBox.position(xIndex, yIndex);
+  yIndex += 20;
+  numberOfBoidsSlider.position(xIndex, yIndex);
 }
 
 document.oncontextmenu = function () {
@@ -121,5 +112,33 @@ document.oncontextmenu = function () {
 
 function draw() {
   background(51);
+
+  //remove boid
+  if (numberOfBoidsSlider.value() * 1.3 < flocks.length) {
+    let randomIndex = Math.floor(random(flocks.length));
+    flocks.splice(randomIndex, 1);
+  }
+  var boid = new Boid();
+  const countSameColor = (accumulator, currentValue) => currentValue.myColor === boid.myColor ? ++accumulator : accumulator;
+  //remove lonely boids
+  for (let index = flocks.length - 1; index > -1; index--) {
+    boid = flocks[index];
+    let flockSize = flocks.reduce(countSameColor, 1);
+    if (flockSize <= minFlockSize) {
+      flocks.splice(index, 1);
+    }
+  };
+
+  //add boid
+  while (numberOfBoidsSlider.value() > flocks.length) {
+    let flock = [];
+    let colorr = color(random(256), random(256), random(256));
+    let numberOfBoidsInTheFlock = random(minFlockSize, numberOfBoids / 3);
+    for (let i = 0; i < numberOfBoidsInTheFlock; i++) {
+      flock.push(new Boid(colorr));
+    }
+    flocks = flocks.concat(flock);
+  }
+
   flocksUpdate();
 }
