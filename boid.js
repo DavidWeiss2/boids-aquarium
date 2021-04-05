@@ -31,7 +31,7 @@ class Boid {
     let dx = Math.abs(this.position.x - otherPosition.x);
     let dy = Math.abs(this.position.y - otherPosition.y);
     if (dx > width / 2) dx = width - dx;
-    if (dy > height / 2) dy = width - dy;
+    if (dy > height / 2) dy = height - dy;
 
     return Math.sqrt(dx * dx + dy * dy);
   };
