@@ -15,7 +15,7 @@ let divider = Boid.r() * 500;
 let maxNumberOfBoids;
 let minNumberOfBoids;
 let numberOfBoids = -1;
-let minFlockSize = 3;
+let minFlockSize = 2;
 
 let flocksUpdate = () => {
   let debug = allDebugCheckBox.checked();
@@ -78,8 +78,8 @@ document.oncontextmenu = function () {
 
 function setNumberOfBoids() {
   area = width * height;
-  maxNumberOfBoids = (area / divider) * 2;
-  minNumberOfBoids = maxNumberOfBoids / 5;
+  maxNumberOfBoids = 2 //(area / divider) * 2;
+  minNumberOfBoids = Math.max(maxNumberOfBoids / 20, 2);
   if (numberOfBoids === -1) {
     numberOfBoids = random(minNumberOfBoids, maxNumberOfBoids);
   } else {
@@ -109,7 +109,7 @@ function draw() {
   }
 
   //remove boid
-  if (numberOfBoidsSlider.value() * 1.3 < flocks.length) {
+  if (numberOfBoidsSlider.value() < flocks.length) {
     let randomIndex = Math.floor(random(flocks.length));
     flocks.splice(randomIndex, 1);
   }

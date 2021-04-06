@@ -28,13 +28,38 @@ class Boid {
   }
 
   toroidalDistance = (otherPosition) => {
-    let dx = Math.abs(this.position.x - otherPosition.x);
-    let dy = Math.abs(this.position.y - otherPosition.y);
-    if (dx > width / 2) dx = width - dx;
-    if (dy > height / 2) dy = height - dy;
+    let { dx, dy } = this.ShortestDxDy(otherPosition);
 
-    return Math.sqrt(dx * dx + dy * dy);
+    return Math.sqrt(dx ** 2 + dy ** 2);
   };
+
+  ShortestDxDy(otherPosition) {
+    let dx = otherPosition.x - this.position.x;
+    let dy = otherPosition.y - this.position.y;
+    let halfWidth = width / 2;
+    let halfHeight = height / 2;
+
+    //if in left side
+    if (this.position.x < halfWidth) {
+      if (dx > halfWidth) {
+        dx = -width + dx;
+      }
+    } else if (dx < -halfWidth) {
+      dx = width - dx;
+    }
+
+    //if in up side
+    if (this.position.y < halfHeight) {
+      if (dy > halfHeight) {
+        dy = -height + dy;
+      }
+    } else if (dy < -halfHeight) {
+      dy = height - dy;
+    }
+
+    let vec = createVector(dx, dy);
+    return { dx, dy };
+  }
 
   edges() {
     this.edgeChecker("x", createVector(1, 0), width);
@@ -44,12 +69,12 @@ class Boid {
   edgeChecker(property, steeringVector, heightOrwidth) {
     const margin = 0;
     const turnFactor = Boid.maxForce / 10;
-    if (this.position[property] - Boid.r() > heightOrwidth) {
+    if (this.position[property] > heightOrwidth) {
       this.position[property] = 0;
     } else if (this.position[property] > heightOrwidth - margin) {
       steeringVector.mult(-turnFactor);
       this.acceleration.add(steeringVector);
-    } else if (this.position[property] < 0 - Boid.r()) {
+    } else if (this.position[property] < 0) {
       this.position[property] = heightOrwidth;
     } else if (this.position[property] < margin) {
       steeringVector.mult(turnFactor);
@@ -65,8 +90,7 @@ class Boid {
       if (other.myColor != this.myColor) continue;
       let d = this.toroidalDistance(other.position);
       if (other != this && d < Boid.alignmentPerceptionRadius()) {
-        let dx = other.position.x - this.position.x;
-        let dy = other.position.y - this.position.y;
+        let { dx, dy } = this.ShortestDxDy(other.position);
         let vec = createVector(dx, dy);
         if (
           Math.abs(this.velocity.angleBetween(vec)) <
@@ -80,8 +104,8 @@ class Boid {
             line(
               this.position.x,
               this.position.y,
-              other.position.x,
-              other.position.y
+              this.position.x + vec.x,
+              this.position.y + vec.y
             );
             pop();
           }
@@ -105,8 +129,7 @@ class Boid {
     for (let other of boids) {
       let d = this.toroidalDistance(other.position);
       if (other != this && d < Boid.separationPerceptionRadius()) {
-        let dx = other.position.x - this.position.x;
-        let dy = other.position.y - this.position.y;
+        let { dx, dy } = this.ShortestDxDy(other.position);
         let vec = createVector(dx, dy);
         if (
           Math.abs(this.velocity.angleBetween(vec)) <
@@ -122,8 +145,8 @@ class Boid {
             line(
               this.position.x,
               this.position.y,
-              other.position.x,
-              other.position.y
+              this.position.x + vec.x,
+              this.position.y + vec.y
             );
             pop();
           }
@@ -150,8 +173,7 @@ class Boid {
       let d = this.toroidalDistance(other.position);
 
       if (other != this && d < Boid.cohesionPerceptionRadius()) {
-        let dx = other.position.x - this.position.x;
-        let dy = other.position.y - this.position.y;
+        let { dx, dy } = this.ShortestDxDy(other.position);
         let vec = createVector(dx, dy);
         if (
           Math.abs(this.velocity.angleBetween(vec)) <
@@ -165,8 +187,8 @@ class Boid {
             line(
               this.position.x,
               this.position.y,
-              other.position.x,
-              other.position.y
+              this.position.x + vec.x,
+              this.position.y + vec.y
             );
             pop();
           }
