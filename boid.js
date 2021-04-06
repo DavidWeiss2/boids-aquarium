@@ -67,8 +67,8 @@ class Boid {
   }
 
   edgeChecker(property, steeringVector, heightOrwidth) {
-    const margin = 0;
-    const turnFactor = Boid.maxForce / 10;
+    const margin = 50;
+    const turnFactor = Boid.maxForce;
     if (this.position[property] > heightOrwidth) {
       this.position[property] = 0;
     } else if (this.position[property] > heightOrwidth - margin) {
@@ -127,6 +127,7 @@ class Boid {
     let total = 0;
     this.flagsRGBforACS[2] = 0;
     for (let other of boids) {
+      if(!separationOnBoidsFromOtherSpecies.checked() && other.myColor != this.myColor) continue;
       let d = this.toroidalDistance(other.position);
       if (other != this && d < Boid.separationPerceptionRadius()) {
         let { dx, dy } = this.ShortestDxDy(other.position);

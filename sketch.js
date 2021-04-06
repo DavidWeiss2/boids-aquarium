@@ -9,13 +9,13 @@
 "use strict";
 
 let flocks = [];
-
 let area;
 let divider = Boid.r() * 500;
 let maxNumberOfBoids;
 let minNumberOfBoids;
 let numberOfBoids = -1;
 let minFlockSize = 2;
+let map;
 
 let flocksUpdate = () => {
   let debug = allDebugCheckBox.checked();
@@ -42,12 +42,17 @@ let alignSlider, cohesionSlider, separationSlider, PerceptionDagreesSlider;
 let separationPerceptionSlider,
   alignmentPerceptionSlider,
   cohesionPerceptionSlider;
-let allDebugCheckBox, freezeCheckBox;
+let allDebugCheckBox, freezeCheckBox, tiledCheckBox, separationOnBoidsFromOtherSpecies;
 let numberOfBoidsSlider;
 
 function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
+  map = createGraphics(width, height);
   canvas.position(0, 0);
+  drawingContext.shadowOffsetX = 5;
+  drawingContext.shadowOffsetY = -3;
+  drawingContext.shadowBlur = 10;
+  drawingContext.shadowColor = "black";
 
   alignSlider = createSlider(0, 2, 1, 0.1);
   cohesionSlider = createSlider(0, 2, 0.8, 0.1);
@@ -63,6 +68,8 @@ function setup() {
   );
   allDebugCheckBox = createCheckbox("All debug", false);
   freezeCheckBox = createCheckbox("freeze", false);
+  tiledCheckBox = createCheckbox("tiled?", false);
+  separationOnBoidsFromOtherSpecies = createCheckbox("avoid others", false);
   numberOfBoidsSlider = createSlider(0, 10, 5, 1);
   setNumberOfBoids();
 }
@@ -78,7 +85,7 @@ document.oncontextmenu = function () {
 
 function setNumberOfBoids() {
   area = width * height;
-  maxNumberOfBoids = 2 //(area / divider) * 2;
+  maxNumberOfBoids = (area / divider) * 2;
   minNumberOfBoids = Math.max(maxNumberOfBoids / 20, 2);
   if (numberOfBoids === -1) {
     numberOfBoids = random(minNumberOfBoids, maxNumberOfBoids);
@@ -91,13 +98,30 @@ function setNumberOfBoids() {
   numberOfBoidsSlider.value(numberOfBoids);
 }
 
+
 function draw() {
   background(51);
-  displayControls();
+  updateNumberOfBoids();
+  flocksUpdate();
 
+  if (tiledCheckBox.checked()) {
+    map.reset();
+    map.image(canvas, (width / 3) * 0, (height / 3) * 0, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 1, (height / 3) * 0, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 2, (height / 3) * 0, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 0, (height / 3) * 1, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 1, (height / 3) * 1, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 2, (height / 3) * 1, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 0, (height / 3) * 2, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 1, (height / 3) * 2, width / 3, height / 3);
+    map.image(canvas, (width / 3) * 2, (height / 3) * 2, width / 3, height / 3);
+    image(map, 0, 0);
+  }
+  displayControls();
+}
+function updateNumberOfBoids() {
   var boid = new Boid();
-  const countSameColor = (accumulator, currentValue) =>
-    currentValue.myColor === boid.myColor ? ++accumulator : accumulator;
+  const countSameColor = (accumulator, currentValue) => currentValue.myColor === boid.myColor ? ++accumulator : accumulator;
 
   //remove lonely boids
   for (let index = flocks.length - 1; index > -1; index--) {
@@ -109,7 +133,7 @@ function draw() {
   }
 
   //remove boid
-  if (numberOfBoidsSlider.value() < flocks.length) {
+  if (numberOfBoidsSlider.value() + 1 < flocks.length) {
     let randomIndex = Math.floor(random(flocks.length));
     flocks.splice(randomIndex, 1);
   }
@@ -124,9 +148,8 @@ function draw() {
     }
     flocks = flocks.concat(flock);
   }
-
-  flocksUpdate();
 }
+
 function displayControls() {
   let yIndex = 10;
   let xIndex = width - 150;
@@ -158,7 +181,11 @@ function displayControls() {
   yIndex += 20;
   separationPerceptionSlider.position(xIndex, yIndex);
   yIndex += 20;
+  separationOnBoidsFromOtherSpecies.position(xIndex, yIndex);
+  yIndex += 20;
   allDebugCheckBox.position(xIndex, yIndex);
   yIndex += 20;
   freezeCheckBox.position(xIndex, yIndex);
+  yIndex += 20;
+  tiledCheckBox.position(xIndex, yIndex);
 }
