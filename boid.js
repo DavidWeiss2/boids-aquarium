@@ -62,19 +62,23 @@ class Boid {
   }
 
   edges() {
-    this.edgeChecker("x", createVector(1, 0), width);
-    this.edgeChecker("y", createVector(0, 1), height);
+    this.edgeChecker("x", createVector(1, 0.1), width);
+    this.edgeChecker("y", createVector(0.1, 1), height);
   }
 
   edgeChecker(property, steeringVector, heightOrwidth) {
-    const margin = 50;
-    const turnFactor = Boid.maxForce;
-    if (this.position[property] > heightOrwidth) {
+    const margin = -50;
+    const bottomMargin = 150;
+    const turnFactor = Boid.maxForce * 3;
+    if(property === 'y'  && this.position[property] > heightOrwidth - bottomMargin) {
+      steeringVector.mult(-turnFactor);
+      this.acceleration.add(steeringVector);
+    } else if (this.position[property] > heightOrwidth && margin === 0) {
       this.position[property] = 0;
     } else if (this.position[property] > heightOrwidth - margin) {
       steeringVector.mult(-turnFactor);
       this.acceleration.add(steeringVector);
-    } else if (this.position[property] < 0) {
+    } else if (this.position[property] < 0 && margin === 0) {
       this.position[property] = heightOrwidth;
     } else if (this.position[property] < margin) {
       steeringVector.mult(turnFactor);
@@ -82,7 +86,7 @@ class Boid {
     }
   }
 
-  align(boids) {
+  align(boids, debug = false) {
     let steering = createVector();
     let total = 0;
     this.flagsRGBforACS[0] = 0;
@@ -98,7 +102,7 @@ class Boid {
         ) {
           steering.add(other.velocity);
           total++;
-          if (allDebugCheckBox.checked()) {
+          if (debug) {
             push();
             stroke(0, 255, 0, alignSlider.value() * 100 + 30);
             line(
@@ -122,12 +126,16 @@ class Boid {
     return steering;
   }
 
-  separation(boids) {
+  separation(boids, debug = false) {
     let steering = createVector();
     let total = 0;
     this.flagsRGBforACS[2] = 0;
     for (let other of boids) {
-      if(!separationOnBoidsFromOtherSpecies.checked() && other.myColor != this.myColor) continue;
+      if (
+        !separationOnBoidsFromOtherSpecies.checked() &&
+        other.myColor != this.myColor
+      )
+        continue;
       let d = this.toroidalDistance(other.position);
       if (other != this && d < Boid.separationPerceptionRadius()) {
         let { dx, dy } = this.ShortestDxDy(other.position);
@@ -140,7 +148,7 @@ class Boid {
           diff.div(d * d);
           steering.add(diff);
           total++;
-          if (allDebugCheckBox.checked()) {
+          if (debug) {
             push();
             stroke(255, 0, 0, separationSlider.value() * 100 + 30);
             line(
@@ -164,7 +172,7 @@ class Boid {
     return steering;
   }
 
-  cohesion(boids) {
+  cohesion(boids, debug = false) {
     let steering = createVector();
     let total = 0;
     this.flagsRGBforACS[1] = 0;
@@ -182,7 +190,7 @@ class Boid {
         ) {
           steering.add(other.position);
           total++;
-          if (allDebugCheckBox.checked()) {
+          if (debug) {
             push();
             stroke(0, 0, 255, cohesionSlider.value() * 100 + 30);
             line(
@@ -207,10 +215,14 @@ class Boid {
     return steering;
   }
 
-  flock(boids) {
-    let alignment = this.align(boids);
-    let cohesion = this.cohesion(boids);
-    let separation = this.separation(boids);
+  flock(boids, debug = false) {
+    if (!separationOnBoidsFromOtherSpecies.checked()) {
+      boids = boids.filter((boid) => boid.myColor === this.myColor);
+    }
+
+    let alignment = this.align(boids, debug);
+    let cohesion = this.cohesion(boids, debug);
+    let separation = this.separation(boids, debug);
 
     alignment.mult(alignSlider.value());
     cohesion.mult(cohesionSlider.value());
@@ -228,7 +240,7 @@ class Boid {
     this.acceleration.setMag(0.01);
   }
 
-  show(debug = false, boids = []) {
+  show(debug = false) {
     let theta = this.velocity.heading() + PI;
     push();
     translate(this.position.x, this.position.y);

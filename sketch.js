@@ -15,6 +15,7 @@ let maxNumberOfBoids;
 let minNumberOfBoids;
 let numberOfBoids = -1;
 let minFlockSize = 2;
+let maxFlockSize = 15;
 let map;
 
 let flocksUpdate = () => {
@@ -22,8 +23,8 @@ let flocksUpdate = () => {
 
   if (freezeCheckBox.checked()) {
     for (let boid of flocks) {
-      boid.flock(flocks);
-      boid.show(debug, flocks);
+      boid.flock(flocks, debug);
+      boid.show(debug);
       debug = false;
     }
     return;
@@ -31,7 +32,7 @@ let flocksUpdate = () => {
 
   for (let boid of flocks) {
     boid.edges();
-    boid.flock(flocks);
+    boid.flock(flocks, debug);
     boid.update();
     boid.show(debug, flocks);
     debug = false;
@@ -55,15 +56,15 @@ function setup() {
   drawingContext.shadowColor = "black";
 
   alignSlider = createSlider(0, 2, 1, 0.1);
-  cohesionSlider = createSlider(0, 2, 0.8, 0.1);
+  cohesionSlider = createSlider(0, 2, 1, 0.1);
   separationSlider = createSlider(0, 2, 1.5, 0.1);
-  alignmentPerceptionSlider = createSlider(0.5, 10, 4, 0.5);
-  cohesionPerceptionSlider = createSlider(0.5, 10, 6, 0.5);
-  separationPerceptionSlider = createSlider(0.5, 10, 2, 0.5);
+  alignmentPerceptionSlider = createSlider(0.5, 10, 5, 0.5);
+  cohesionPerceptionSlider = createSlider(0.5, 10, 10, 0.5);
+  separationPerceptionSlider = createSlider(0.5, 10, 1.5, 0.5);
   PerceptionDagreesSlider = createSlider(
     PI / 180,
     PI + PI / 180,
-    PI - PI / 8,
+    PI + PI / 180, //PI - PI / 8,
     PI / 180
   );
   allDebugCheckBox = createCheckbox("All debug", false);
@@ -130,6 +131,9 @@ function updateNumberOfBoids() {
     if (flockSize <= minFlockSize) {
       flocks.splice(index, 1);
     }
+    if (flockSize > maxFlockSize) {
+      flocks.splice(index, 1);
+    }
   }
 
   //remove boid
@@ -142,7 +146,7 @@ function updateNumberOfBoids() {
   while (numberOfBoidsSlider.value() > flocks.length) {
     let flock = [];
     let colorr = color(random(256), random(256), random(256));
-    let numberOfBoidsInTheFlock = random(minFlockSize, numberOfBoids / 3);
+    let numberOfBoidsInTheFlock = random(numberOfBoids / 3, numberOfBoids / 2);
     for (let i = 0; i < numberOfBoidsInTheFlock; i++) {
       flock.push(new Boid(colorr));
     }
